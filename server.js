@@ -2,6 +2,7 @@ import express from "express";
 import http from "http";
 import { Server } from 'socket.io';
 import { formatMessage } from "./utils/message.js";
+import { userJoin, getCurrentUser, userLeave, getRoomUsers } from "./utils/users.js";
 
 const app  = express();
 const server = http.createServer(app)
@@ -15,22 +16,48 @@ app.use(express.static("public"))
 // Run when a client connects
 io.on('connection', socket => {
 
-    //Welcome The Current User
-    socket.emit('message', formatMessage(botName, 'Welcome To JustChat!'));
+    socket.on("joinRoom", ({username, room}) => {
 
-    // Broadcast when a user connects
-    socket.broadcast.emit('message', formatMessage(botName,'A user has joined the chat'))
+        const user = userJoin(socket.id, username, room);
 
-    // Runs when a client disconnects
-    socket.on('disconnect', () => {
-        // Broadcast when a user disconnects
-        socket.broadcast.emit('message', formatMessage(botName,'A user has left the chat'))
+        socket.join(user.room);
+
+        //Welcome The Current User
+        socket.emit('message', formatMessage(botName, 'Welcome To JustChat!'));
+
+        // Broadcast when a user connects
+        socket.broadcast.to(user.room).emit('message', formatMessage(botName,`${user.username} has joined the chat`))
+
+        // Send user's and room info
+        io.to(user.room).emit('roomUsers', {
+            room: user.room,
+            users: getRoomUsers(user.room)
+        })
+
     })
 
     //Listen for chatMessage from frontend
     socket.on('chatMessage', msg => {
-        io.emit('message', formatMessage('USER', msg));
+        const user = getCurrentUser(socket.id);
+        io.to(user.room).emit('message', formatMessage(user.username, msg));
     });
+
+    // Runs when a client disconnects
+    socket.on('disconnect', () => {
+        
+        const user = userLeave(socket.id);
+
+        if(user) {
+            
+            io.to(user.room).emit('message', formatMessage(botName,`${user.username} has left the chat`))
+
+            // Send user's and room info
+            io.to(user.room).emit('roomUsers', {
+                room: user.room,
+                users: getRoomUsers(user.room)
+            })
+        }
+    })
 
 });
 
