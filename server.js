@@ -1,5 +1,6 @@
 import express from "express";
 import http from "http";
+import cors from "cors"
 import { Server } from 'socket.io';
 import path from "path";
 import { fileURLToPath } from 'url';
@@ -17,6 +18,12 @@ const botName = "PixelBot";
 
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.use(cors());
+app.use((req, res, next) => {
+  res.setHeader("X-Frame-Options", "ALLOWALL");
+  next();
+});
 
 // Run when a client connects
 io.on('connection', socket => {
