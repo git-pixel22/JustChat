@@ -187,3 +187,25 @@ a {
         display: none;
     }
 }
+
+footer {
+    display: flex;
+    justify-content: space-around;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background-color: #66bb6a;
+    padding: 10px 0;
+    font-size: larger;
+    font-weight: bold;
+}
+  
+footer a {
+    color: white;
+    text-decoration: underline;
+    margin: 0 10px;
+}
+
+footer a:hover {
+    color: darkgreen;
+}
